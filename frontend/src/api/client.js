@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// In production, use relative URL ("") so requests go to the current domain (e.g. Render).
+// In development, fallback to localhost:8000 or Vite proxy.
+const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 
 const client = axios.create({
   baseURL: API_BASE,
@@ -18,7 +20,7 @@ client.interceptors.request.use((config) => {
 client.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    if (err.response?.status === 401 && !window.location.pathname.includes('/login')) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
@@ -34,6 +36,7 @@ export const api = {
   login: (username, password) => client.post('/api/auth/login', { username, password }),
   getMe: () => client.get('/api/auth/me'),
   changePassword: (data) => client.post('/api/auth/change-password', data),
+  resetPassword: (data) => client.post('/api/auth/reset-password', data),
 
   // Dashboard
   getStats: () => client.get('/api/dashboard/stats'),

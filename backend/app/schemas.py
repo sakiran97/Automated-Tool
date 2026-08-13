@@ -23,6 +23,12 @@ class ChangePasswordRequest(BaseModel):
     new_password: str
 
 
+class ResetPasswordRequest(BaseModel):
+    username: str = "admin"
+    new_password: str
+    reset_pin: Optional[str] = None
+
+
 # ---------------------------------------------------------------------------
 # Target
 # ---------------------------------------------------------------------------

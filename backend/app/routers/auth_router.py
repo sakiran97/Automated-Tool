@@ -6,9 +6,31 @@ from sqlalchemy import select, update
 from app.database import get_db
 from app.models import AdminUser
 from app.auth import verify_password, create_access_token, get_current_user, get_password_hash
-from app.schemas import LoginRequest, TokenResponse, ChangePasswordRequest
+from app.schemas import LoginRequest, TokenResponse, ChangePasswordRequest, ResetPasswordRequest
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+
+@router.post("/reset-password")
+async def reset_password(request: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
+    """Reset password for an admin user."""
+    result = await db.execute(select(AdminUser).where(AdminUser.username == request.username))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        # Create the user if it doesn't exist
+        user = AdminUser(
+            username=request.username,
+            hashed_password=get_password_hash(request.new_password),
+            is_default_password=False,
+        )
+        db.add(user)
+    else:
+        user.hashed_password = get_password_hash(request.new_password)
+        user.is_default_password = False
+
+    await db.commit()
+    return {"message": f"Password for {request.username} has been reset successfully. You can now log in."}
 
 
 @router.post("/login", response_model=TokenResponse)
