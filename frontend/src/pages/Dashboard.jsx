@@ -93,7 +93,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* 4 Key Stat Cards */}
+        {/* 6 Key Stat Cards */}
         <div className="stats-grid">
           <StatCard
             icon="🎯"
@@ -103,31 +103,45 @@ export default function Dashboard() {
             color="var(--primary)"
           />
           <StatCard
-            icon="🐛"
-            value={s.total_findings || 0}
-            label="Total Findings"
-            sub={`${s.new_findings || 0} unreviewed findings`}
+            icon="🔴"
+            value={s.severity_counts?.critical || 0}
+            label="Critical Findings"
+            sub="Immediate action required"
+            color="var(--critical)"
+          />
+          <StatCard
+            icon="🟠"
+            value={s.severity_counts?.high || 0}
+            label="High Findings"
+            sub="Review within 24 hours"
             color="var(--high)"
           />
           <StatCard
-            icon="🔴"
-            value={s.severity_counts?.critical || 0}
-            label="Critical Vulnerabilities"
-            sub={`${s.severity_counts?.high || 0} high severity`}
-            color="var(--critical)"
+            icon="🐛"
+            value={s.total_findings || 0}
+            label="Total Vulnerabilities"
+            sub={`${s.new_findings || 0} new this scan`}
+            color="var(--accent-purple)"
           />
           <StatCard
             icon="⚡"
             value={s.total_scans || 0}
             label="Total Scans"
-            sub={s.last_scan_at ? `Last: ${formatDistanceToNow(new Date(s.last_scan_at), { addSuffix: true })}` : 'No scans yet'}
+            sub={`${s.successful_scans || 0} successful`}
             color="var(--success)"
+          />
+          <StatCard
+            icon="📊"
+            value={s.new_findings || 0}
+            label="Unreviewed Findings"
+            sub="Findings awaiting triage"
+            color="var(--medium)"
           />
         </div>
 
-        {/* Charts Grid */}
-        <div className="dashboard-grid" style={{ marginBottom: 24 }}>
-          {/* Trend Chart */}
+        {/* 2-Column Charts Grid */}
+        <div className="grid-2">
+          {/* Trend Chart (Left Column) */}
           <div className="card">
             <div className="card-header">
               <span className="card-title">📈 14-Day Vulnerability Trends</span>
@@ -160,7 +174,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Severity Breakdown */}
+          {/* Severity Breakdown (Right Column) */}
           <div className="card">
             <div className="card-header">
               <span className="card-title">🎯 Severity Breakdown</span>
@@ -188,7 +202,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Recent Critical/High Findings */}
+        {/* Recent Critical/High Findings (Full Width Table Beneath Charts) */}
         <div className="card">
           <div className="card-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
