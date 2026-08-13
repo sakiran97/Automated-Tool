@@ -78,11 +78,6 @@ export default function Login() {
             {loading ? <><span className="spinner" style={{ width: 16, height: 16 }} /> Signing in...</> : '🔓 Sign In'}
           </button>
         </form>
-
-        <div style={{ marginTop: 20, padding: '12px 14px', background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 'var(--radius-md)', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-          💡 Default credentials: <strong style={{ color: 'var(--text-secondary)' }}>admin / BugTracker2024!</strong>
-          <br />Change your password after first login.
-        </div>
       </div>
 
       {/* Forgot / Reset Password Modal */}
