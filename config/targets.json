@@ -39,6 +39,46 @@
       "scan_interval_minutes": null,
       "custom_headers": "X-HackerOne-Research: saikiran_97\nUser-Agent: BugBounty-Security-Research",
       "is_active": true
+    },
+    {
+      "name": "PRISM - OYO Rooms Main Web App",
+      "url": "https://www.oyorooms.com",
+      "platform": "HackerOne",
+      "scope_details": "PRISM / OYO Rooms main portal. VDP program for HackerOne reputation & Hall of Fame. In-scope for automated recon.",
+      "scan_mode": "auto",
+      "scan_interval_minutes": 180,
+      "custom_headers": "X-HackerOne: saikiran_97\nUser-Agent: BugBounty-Security-Research",
+      "is_active": true
+    },
+    {
+      "name": "PRISM - OYO Rooms Core API",
+      "url": "https://api.oyorooms.com",
+      "platform": "HackerOne",
+      "scope_details": "PRISM / OYO Rooms backend API. Look for exposed endpoints, secret keys, or diff changes.",
+      "scan_mode": "auto",
+      "scan_interval_minutes": 180,
+      "custom_headers": "X-HackerOne: saikiran_97\nUser-Agent: BugBounty-Security-Research",
+      "is_active": true
+    },
+    {
+      "name": "PRISM - Motel 6 Main Web App",
+      "url": "https://www.motel6.com",
+      "platform": "HackerOne",
+      "scope_details": "PRISM brand - Motel 6 booking portal. In-scope for vulnerability disclosure.",
+      "scan_mode": "auto",
+      "scan_interval_minutes": 180,
+      "custom_headers": "X-HackerOne: saikiran_97\nUser-Agent: BugBounty-Security-Research",
+      "is_active": true
+    },
+    {
+      "name": "PRISM - Belvilla by OYO",
+      "url": "https://www.belvilla.com",
+      "platform": "HackerOne",
+      "scope_details": "PRISM European vacation rental platform. Check for exposure of dev/admin routes.",
+      "scan_mode": "manual",
+      "scan_interval_minutes": null,
+      "custom_headers": "X-HackerOne: saikiran_97\nUser-Agent: BugBounty-Security-Research",
+      "is_active": true
     }
   ]
 }
