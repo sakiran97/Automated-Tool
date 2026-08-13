@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import TopBar from '../components/TopBar';
-import { formatDistanceToNow } from 'date-fns';
 
 export default function Reports() {
   const [reports, setReports] = useState([]);
   const [targets, setTargets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   const [selectedReport, setSelectedReport] = useState(null);
   const [reportContent, setReportContent] = useState(null);
 
-  useEffect(() => {
+  const fetchReportsAndTargets = () => {
     Promise.all([api.getReports(), api.getTargets()])
       .then(([rRes, tRes]) => {
         setReports(rRes.data);
@@ -19,6 +19,10 @@ export default function Reports() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchReportsAndTargets();
   }, []);
 
   const generateReport = async (targetId) => {
@@ -30,6 +34,25 @@ export default function Reports() {
       alert('Failed to generate report: ' + (e.response?.data?.detail || e.message));
     } finally {
       setGenerating(null);
+    }
+  };
+
+  const handleDeleteReport = async (reportId, reportTitle, e) => {
+    e.stopPropagation();
+    if (!confirm(`Are you sure you want to delete this report?\n\n"${reportTitle}"`)) return;
+
+    setDeletingId(reportId);
+    try {
+      await api.deleteReport(reportId);
+      setReports(prev => prev.filter(r => r.id !== reportId));
+      if (selectedReport?.id === reportId) {
+        setSelectedReport(null);
+        setReportContent(null);
+      }
+    } catch (err) {
+      alert('Failed to delete report: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -45,6 +68,19 @@ export default function Reports() {
     try { return JSON.parse(jsonStr); } catch { return {}; }
   };
 
+  const formatExactDate = (dateStr) => {
+    if (!dateStr) return '—';
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleString(undefined, {
+        year: 'numeric', month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
   return (
     <>
       <TopBar title="Reports" />
@@ -52,8 +88,9 @@ export default function Reports() {
         <div className="page-header">
           <div className="page-header-left">
             <div className="page-title">📄 Bug Bounty Reports</div>
-            <div className="page-subtitle">Generate and download submission-ready vulnerability reports</div>
+            <div className="page-subtitle">Generate, review, and download submission-ready vulnerability reports</div>
           </div>
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{reports.length} generated</span>
         </div>
 
         {/* Generate Reports Section */}
@@ -104,7 +141,7 @@ export default function Reports() {
                     <div>
                       <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 4 }}>{r.title}</div>
                       <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 8 }}>
-                        {r.target?.name} · {formatDistanceToNow(new Date(r.generated_at), { addSuffix: true })} · {r.findings_count} findings
+                        {r.target?.name} · Generated on <strong style={{ color: 'var(--text-secondary)' }}>{formatExactDate(r.generated_at)}</strong> · {r.findings_count} findings
                       </div>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                         {Object.entries(breakdown).filter(([,c]) => c > 0).map(([sev, count]) => (
@@ -112,10 +149,18 @@ export default function Reports() {
                         ))}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 8 }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       <button className="btn btn-secondary btn-sm" onClick={() => viewReport(r)}>👁 Preview</button>
                       <a className="btn btn-secondary btn-sm" href={api.downloadMarkdown(r.id)} download>⬇ MD</a>
                       <a className="btn btn-secondary btn-sm" href={api.downloadJson(r.id)} download>⬇ JSON</a>
+                      <button
+                        className="btn btn-danger btn-sm"
+                        disabled={deletingId === r.id}
+                        onClick={(e) => handleDeleteReport(r.id, r.title, e)}
+                        title="Delete this report"
+                      >
+                        {deletingId === r.id ? '⏳' : '🗑 Delete'}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -127,12 +172,15 @@ export default function Reports() {
         {/* Report Preview Modal */}
         {selectedReport && reportContent && (
           <div className="modal-overlay" onClick={() => { setSelectedReport(null); setReportContent(null); }}>
-            <div className="modal" style={{ maxWidth: 800 }} onClick={e => e.stopPropagation()}>
+            <div className="modal" style={{ maxWidth: 840 }} onClick={e => e.stopPropagation()}>
               <div className="modal-header">
                 <span className="modal-title">📄 {selectedReport.title}</span>
-                <button className="topbar-btn" onClick={() => { setSelectedReport(null); setReportContent(null); }} style={{ width: 28, height: 28 }}>✕</button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <a className="btn btn-secondary btn-sm" href={api.downloadMarkdown(selectedReport.id)} download>⬇ Download MD</a>
+                  <button className="topbar-btn" onClick={() => { setSelectedReport(null); setReportContent(null); }} style={{ width: 28, height: 28 }}>✕</button>
+                </div>
               </div>
-              <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+              <div className="modal-body" style={{ maxHeight: '72vh', overflowY: 'auto' }}>
                 <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'Inter, sans-serif', fontSize: '0.83rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
                   {reportContent.content_markdown}
                 </pre>

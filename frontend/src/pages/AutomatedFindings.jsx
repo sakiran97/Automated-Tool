@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import TopBar from '../components/TopBar';
@@ -15,6 +15,8 @@ export default function AutomatedFindings() {
   const [severityFilter, setSeverityFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const navigate = useNavigate();
 
   const fetchFindings = async () => {
@@ -24,20 +26,44 @@ export default function AutomatedFindings() {
       if (severityFilter !== 'all') params.severity = severityFilter;
       if (categoryFilter !== 'all') params.category = categoryFilter;
       if (statusFilter !== 'all') params.status = statusFilter;
-      params.limit = 200;
+      params.limit = 500;
       const res = await api.getFindings(params);
-      setFindings(res.data);
+      // Ensure sorted latest first
+      const sorted = (res.data || []).sort((a, b) => (b.id - a.id));
+      setFindings(sorted);
+      setPage(1);
     } catch (e) { /* handle */ }
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchFindings(); }, [severityFilter, categoryFilter, statusFilter]);
+  useEffect(() => {
+    fetchFindings();
+  }, [severityFilter, categoryFilter, statusFilter]);
 
   const updateStatus = async (id, status, e) => {
     e.stopPropagation();
     await api.updateFinding(id, { status });
     setFindings(prev => prev.map(f => f.id === id ? { ...f, status } : f));
   };
+
+  const formatExactDate = (dateStr) => {
+    if (!dateStr) return '—';
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleString(undefined, {
+        year: 'numeric', month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  // Pagination calculation
+  const totalPages = Math.ceil(findings.length / pageSize) || 1;
+  const currentPage = Math.min(page, totalPages);
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedFindings = findings.slice(startIndex, startIndex + pageSize);
 
   return (
     <>
@@ -46,9 +72,9 @@ export default function AutomatedFindings() {
         <div className="page-header">
           <div className="page-header-left">
             <div className="page-title">🐛 Automated Findings</div>
-            <div className="page-subtitle">Vulnerabilities discovered by automated scans</div>
+            <div className="page-subtitle">Vulnerabilities discovered and classified by automated scans</div>
           </div>
-          <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{findings.length} results</span>
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{findings.length} results (Latest first)</span>
         </div>
 
         {/* Filters */}
@@ -93,7 +119,7 @@ export default function AutomatedFindings() {
               <div className="empty-state">
                 <div className="empty-icon">🐛</div>
                 <div className="empty-title">No findings match your filters</div>
-                <div className="empty-sub">Try adjusting filters or run a scan</div>
+                <div className="empty-sub">Try adjusting filters or run a new scan</div>
               </div>
             ) : (
               <table>
@@ -110,22 +136,35 @@ export default function AutomatedFindings() {
                   </tr>
                 </thead>
                 <tbody>
-                  {findings.map(f => (
+                  {paginatedFindings.map(f => (
                     <tr key={f.id} onClick={() => navigate(`/findings/${f.id}`)}>
                       <td><SeverityBadge severity={f.severity} /></td>
                       <td className="td-title">{f.title}</td>
-                      <td style={{fontSize:'0.8rem',color:'var(--text-secondary)'}}>{f.target?.name || '—'}</td>
+                      <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{f.target?.name || '—'}</td>
                       <td><span className="badge badge-info">{f.category?.toUpperCase()}</span></td>
-                      <td style={{fontFamily:'monospace',fontSize:'0.82rem',color:'var(--text-secondary)'}}>{f.cvss_score ?? '—'}</td>
-                      <td style={{fontSize:'0.78rem',color:'var(--text-muted)'}}>{formatDistanceToNow(new Date(f.first_seen),{addSuffix:true})}</td>
-                      <td><span className="badge badge-new">{f.status}</span></td>
+                      <td style={{ fontFamily: 'monospace', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{f.cvss_score ?? '—'}</td>
+                      <td>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-primary)' }}>
+                          {formatExactDate(f.first_seen)}
+                        </div>
+                        {f.first_seen && (
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                            {formatDistanceToNow(new Date(f.first_seen), { addSuffix: true })}
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        <span className={`badge ${f.status === 'false_positive' ? 'badge-info' : 'badge-new'}`}>
+                          {f.status}
+                        </span>
+                      </td>
                       <td onClick={e => e.stopPropagation()}>
                         <div style={{ display: 'flex', gap: 4 }}>
                           {f.status === 'new' && (
-                            <button className="btn btn-secondary btn-sm" onClick={e => updateStatus(f.id,'reviewed',e)}>Review</button>
+                            <button className="btn btn-secondary btn-sm" onClick={e => updateStatus(f.id, 'reviewed', e)}>Review</button>
                           )}
                           {f.status !== 'false_positive' && (
-                            <button className="btn btn-secondary btn-sm" onClick={e => updateStatus(f.id,'false_positive',e)}>FP</button>
+                            <button className="btn btn-secondary btn-sm" onClick={e => updateStatus(f.id, 'false_positive', e)}>FP</button>
                           )}
                         </div>
                       </td>
@@ -135,6 +174,54 @@ export default function AutomatedFindings() {
               </table>
             )}
           </div>
+
+          {/* Pagination Bar */}
+          {findings.length > 0 && (
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '14px 20px', borderTop: '1px solid var(--border)', flexWrap: 'wrap', gap: 12
+            }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                Showing <strong style={{ color: 'var(--text-primary)' }}>{startIndex + 1}</strong> to <strong style={{ color: 'var(--text-primary)' }}>{Math.min(startIndex + pageSize, findings.length)}</strong> of <strong style={{ color: 'var(--text-primary)' }}>{findings.length}</strong> findings
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  <span>Rows:</span>
+                  <select
+                    value={pageSize}
+                    onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
+                    className="form-select"
+                    style={{ padding: '4px 8px', fontSize: '0.8rem', width: 68 }}
+                  >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    disabled={currentPage <= 1}
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                  >
+                    ‹ Prev
+                  </button>
+                  <span style={{ padding: '4px 10px', fontSize: '0.82rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}>
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  >
+                    Next ›
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>

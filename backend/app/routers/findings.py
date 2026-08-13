@@ -32,7 +32,7 @@ async def list_findings(
         query = query.where(Finding.category == category)
     if status:
         query = query.where(Finding.status == status)
-    query = query.order_by(Finding.first_seen.desc()).limit(limit).offset(offset)
+    query = query.order_by(Finding.id.desc(), Finding.first_seen.desc()).limit(limit).offset(offset)
     result = await db.execute(query)
     return result.scalars().all()
 

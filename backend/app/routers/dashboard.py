@@ -115,7 +115,7 @@ async def get_recent_findings(
         select(Finding)
         .options(selectinload(Finding.target))
         .where(Finding.severity.in_(["critical", "high"]))
-        .order_by(Finding.first_seen.desc())
+        .order_by(Finding.id.desc(), Finding.first_seen.desc())
         .limit(limit)
     )
     findings = result.scalars().all()

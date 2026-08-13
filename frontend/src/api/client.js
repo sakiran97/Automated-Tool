@@ -66,6 +66,7 @@ export const api = {
   getReports: () => client.get('/api/reports'),
   getReport: (id) => client.get(`/api/reports/${id}`),
   generateReport: (targetId) => client.post(`/api/reports/generate/${targetId}`),
+  deleteReport: (id) => client.delete(`/api/reports/${id}`),
   downloadMarkdown: (id) => `${API_BASE}/api/reports/${id}/download/markdown`,
   downloadJson: (id) => `${API_BASE}/api/reports/${id}/download/json`,
 
