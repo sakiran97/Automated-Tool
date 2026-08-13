@@ -1,0 +1,20 @@
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Python
+backend/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+__pycache__/
+
+# SQLite database (so fresh deployment starts clean)
+backend/bugtracker.db
+*.db
+*.sqlite3
+
+# Environment & Logs
+.env
+*.log

@@ -1,0 +1,44 @@
+{
+  "targets": [
+    {
+      "name": "Wolt - Main Web Application",
+      "url": "https://wolt.com",
+      "platform": "HackerOne",
+      "scope_details": "Main customer web application. Test accounts allowed using @wearehackerone.com emails. No DoS or brute forcing.",
+      "scan_mode": "auto",
+      "scan_interval_minutes": 180,
+      "custom_headers": "X-HackerOne-Research: saikiran_97\nUser-Agent: BugBounty-Security-Research",
+      "is_active": true
+    },
+    {
+      "name": "Wolt - Core API",
+      "url": "https://api.wolt.com",
+      "platform": "HackerOne",
+      "scope_details": "Core backend API services. Check for exposed Swagger/OpenAPI docs, sensitive endpoints, and header misconfigurations.",
+      "scan_mode": "auto",
+      "scan_interval_minutes": 180,
+      "custom_headers": "X-HackerOne-Research: saikiran_97\nUser-Agent: BugBounty-Security-Research",
+      "is_active": true
+    },
+    {
+      "name": "Wolt - Restaurant / Venue Partner Portal",
+      "url": "https://restaurant-api.wolt.com",
+      "platform": "HackerOne",
+      "scope_details": "Partner & merchant portal. In-scope test venue provided in policy: https://wolt.com/en/fin/helsinki/venue/test-670e7897e3c56dcc5b5a0989-sh0p",
+      "scan_mode": "manual",
+      "scan_interval_minutes": null,
+      "custom_headers": "X-HackerOne-Research: saikiran_97\nUser-Agent: BugBounty-Security-Research",
+      "is_active": true
+    },
+    {
+      "name": "Wolt - Courier Partner Platform",
+      "url": "https://courier.wolt.com",
+      "platform": "HackerOne",
+      "scope_details": "Courier partner platform. Manual testing for authorization and IDOR issues on weekends.",
+      "scan_mode": "manual",
+      "scan_interval_minutes": null,
+      "custom_headers": "X-HackerOne-Research: saikiran_97\nUser-Agent: BugBounty-Security-Research",
+      "is_active": true
+    }
+  ]
+}
